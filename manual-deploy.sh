@@ -1,6 +1,6 @@
 ### VARIABLES TO CHANGE - START
-PROJECT_ID=
-SERVICE_NAME=
+PROJECT_ID=carlos-negron-uprm
+SERVICE_NAME=group-6
 ### VARIABLES TO CHANGE - END
 
 # ----------- Manual Deployment ------------ #
