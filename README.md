@@ -1,8 +1,9 @@
-# TODO: Replace with your team name
+Chimichurri
 
 ## Our Team
 
-TODO: Replace with your team members
+Carlos Negron 
+
 
 # Setup
 
