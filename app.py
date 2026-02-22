@@ -1,26 +1,57 @@
-#############################################################################
-# app.py
-#
-# This file contains the entrypoint for the app.
-#
-#############################################################################
-
 import streamlit as st
-from modules import display_my_custom_component, display_post, display_genai_advice, display_activity_summary, display_recent_workouts
-from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts
+from datetime import datetime
+from modules import (
+    display_map,
+    display_session_summary,
+    display_recent_games,
+    display_personalized_recommendations
+)
 
-userId = 'user1'
+st.title("Sports Connect - Unit 2 Demo")
 
+# -----------------------------
+# Mock Data
+# -----------------------------
 
-def display_app_page():
-    """Displays the home page of the app."""
-    st.title('Welcome to SDS!')
+user_location = {"lat": 25.7617, "lng": -80.1918}
 
-    # An example of displaying a custom component called "my_custom_component"
-    value = st.text_input('Enter your name')
-    display_my_custom_component(value)
+sessions = [
+    {
+        "sport": "Soccer",
+        "location": "Central Park",
+        "start_time": datetime(2026, 2, 20, 10, 0),
+        "end_time": datetime(2026, 2, 20, 12, 0)
+    },
+    {
+        "sport": "Soccer",
+        "location": "Central Park",
+        "start_time": datetime(2026, 2, 21, 14, 0),
+        "end_time": datetime(2026, 2, 21, 15, 0)
+    },
+    {
+        "sport": "Basketball",
+        "location": "Downtown Court",
+        "start_time": datetime(2026, 2, 22, 18, 0),
+        "end_time": datetime(2026, 2, 22, 19, 30)
+    }
+]
 
+friends = ["Carlos", "Jean"]
 
-# This is the starting point for your app. You do not need to change these lines
-if __name__ == '__main__':
-    display_app_page()
+# -----------------------------
+# Display Functions
+# -----------------------------
+
+display_map(user_location)
+
+st.divider()
+
+display_session_summary(sessions)
+
+st.divider()
+
+display_recent_games(sessions)
+
+st.divider()
+
+display_personalized_recommendations(sessions, user_location, friends)
