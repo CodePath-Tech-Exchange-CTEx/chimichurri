@@ -3,6 +3,8 @@ Chimichurri
 ## Our Team
 
 Carlos Negron 
+Ayomide Ogunbawale
+Jean Cruz
 
 
 # Setup
