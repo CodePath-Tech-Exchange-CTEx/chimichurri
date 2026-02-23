@@ -7,51 +7,46 @@ from modules import (
     display_personalized_recommendations
 )
 
-st.title("Sports Connect - Unit 2 Demo")
+# --- CONFIG ---
+st.set_page_config(page_title="Sports Connect", layout="wide")
 
-# -----------------------------
-# Mock Data
-# -----------------------------
-
+# --- MOCK DATA ---
 user_location = {"lat": 25.7617, "lng": -80.1918}
-
 sessions = [
-    {
-        "sport": "Soccer",
-        "location": "Central Park",
-        "start_time": datetime(2026, 2, 20, 10, 0),
-        "end_time": datetime(2026, 2, 20, 12, 0)
-    },
-    {
-        "sport": "Soccer",
-        "location": "Central Park",
-        "start_time": datetime(2026, 2, 21, 14, 0),
-        "end_time": datetime(2026, 2, 21, 15, 0)
-    },
-    {
-        "sport": "Basketball",
-        "location": "Downtown Court",
-        "start_time": datetime(2026, 2, 22, 18, 0),
-        "end_time": datetime(2026, 2, 22, 19, 30)
-    }
+    {"sport": "Soccer", "location": "Central Park", "start_time": datetime(2026, 2, 20, 10, 0), "end_time": datetime(2026, 2, 20, 12, 0)},
+    {"sport": "Soccer", "location": "Central Park", "start_time": datetime(2026, 2, 21, 14, 0), "end_time": datetime(2026, 2, 21, 15, 0)},
+    {"sport": "Basketball", "location": "Downtown Court", "start_time": datetime(2026, 2, 22, 18, 0), "end_time": datetime(2026, 2, 22, 19, 30)}
 ]
-
 friends = ["Carlos", "Jean"]
 
-# -----------------------------
-# Display Functions
-# -----------------------------
+# --- SIDEBAR ---
+with st.sidebar:
+    st.title("🏆 Sports Connect")
+    st.markdown("---")
+    # Added "Home" as default index
+    menu = st.radio("Menu", ["Home", "Profile", "Find a Game", "Friends"], index=0)
+    st.write(f"Currently viewing: **{menu}**")
 
-display_map(user_location)
-
+# --- HEADER ---
+st.header("Sports Connect Unit 2.0 Demo")
 st.divider()
 
-display_session_summary(sessions)
+# --- MAIN CONTENT LAYOUT ---
+# We split into two main columns (Left 45%, Right 55%)
+left_col, right_col = st.columns([1, 1.2], gap="large")
 
-st.divider()
+with left_col:
+    # 1. Stats Section
+    display_session_summary(sessions)
+    st.write("") # Spacer
 
-display_recent_games(sessions)
+    # 2. Recent Activity Section
+    display_recent_games(sessions)
+    st.write("") # Spacer
 
-st.divider()
+    # 3. Recommendations Section
+    display_personalized_recommendations(sessions, friends)
 
-display_personalized_recommendations(sessions, user_location, friends)
+with right_col:
+    # 4. Map Section
+    display_map(user_location)
