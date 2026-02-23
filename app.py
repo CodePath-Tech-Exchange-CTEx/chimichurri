@@ -8,7 +8,7 @@ from modules import (
 )
 
 # --- CONFIG ---
-st.set_page_config(page_title="Sports Connect", layout="wide")
+st.set_page_config(page_title="Sports Connect", layout="wide") # line written by Gemini
 
 # --- MOCK DATA ---
 user_location = {"lat": 25.7617, "lng": -80.1918}
@@ -20,7 +20,7 @@ sessions = [
 friends = ["Carlos", "Jean"]
 
 # --- SIDEBAR ---
-with st.sidebar:
+with st.sidebar: # line written by Gemini
     st.title("🏆 Sports Connect")
     st.markdown("---")
     # Added "Home" as default index
@@ -33,7 +33,7 @@ st.divider()
 
 # --- MAIN CONTENT LAYOUT ---
 # We split into two main columns (Left 45%, Right 55%)
-left_col, right_col = st.columns([1, 1.2], gap="large")
+left_col, right_col = st.columns([1, 1.2], gap="large") # line written by Gemini
 
 with left_col:
     # 1. Stats Section

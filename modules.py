@@ -3,7 +3,7 @@ import pandas as pd
 from collections import Counter
 from datetime import datetime
 
-def get_sport_icon(sport):
+def get_sport_icon(sport): # line written by Gemini
     icons = {
         "Soccer": "⚽",
         "Basketball": "🏀",
@@ -25,8 +25,8 @@ def display_map(user_location):
         with st.expander(f"{get_sport_icon(field['sport'])} {field['name']}"):
             st.write(f"This venue is ready for a **{field['sport']}** match!")
 
-def display_session_summary(sessions):
-    st.subheader("📊 Your Stats")
+def display_session_summary(sessions): 
+    st.subheader("📊 Your Stats") # line written by Gemini
     if not sessions:
         st.write("No data yet.")
         return
@@ -46,7 +46,7 @@ def display_session_summary(sessions):
     st.table(pd.DataFrame(summary_data))
 
 def display_recent_games(sessions):
-    st.subheader("🕒 Recent Activity")
+    st.subheader("🕒 Recent Activity") # line written by Gemini
     recent_list = []
     for s in sessions[::-1]:
         recent_list.append({
@@ -58,7 +58,7 @@ def display_recent_games(sessions):
     st.dataframe(pd.DataFrame(recent_list), use_container_width=True, hide_index=True)
 
 def display_personalized_recommendations(sessions, friends):
-    st.subheader("🌟 Recommended")
+    st.subheader("🌟 Recommended") # line written by Gemini
     fav_sport = Counter([s["sport"] for s in sessions]).most_common(1)[0][0]
     
     # Mock recommendation
