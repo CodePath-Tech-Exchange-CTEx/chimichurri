@@ -14,7 +14,7 @@ env:
   PROJECT_ID: 'carlos-negron-uprm'
   SERVICE_NAME: 'group-6'
   SERVICE_REGION: 'us-central1'
-  SERVICE_ACCOUNT: '160020656693-compute@developer.gserviceaccount.com'
+  SERVICE_ACCOUNT:  '<carlos.negron42@upr.edu>@carlos-negron-uprm.iam.gserviceaccount.com'
   WORKLOAD_IDENTITY_PROVIDER: 'projects/160020656693/locations/global/workloadIdentityPools/github-provider/providers/github-project-repo'
 
 jobs:
