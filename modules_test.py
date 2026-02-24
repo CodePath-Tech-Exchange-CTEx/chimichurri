@@ -61,7 +61,7 @@ class TestDisplayMap(unittest.TestCase):
             lambda: modules.display_map(user_location)
         ).run()
 
-        self.assertIsNone(at.exception)
+        self.assertEqual(len(at.exception), 0)
 
 
 # ==========================================================
@@ -77,14 +77,14 @@ class TestDisplaySessionSummary(unittest.TestCase):
             lambda: modules.display_session_summary(sessions)
         ).run()
 
-        self.assertIsNone(at.exception)
+        self.assertEqual(len(at.exception), 0)
 
     def test_summary_empty(self):
         at = AppTest.from_function(
             lambda: modules.display_session_summary([])
         ).run()
 
-        self.assertIsNone(at.exception)
+        self.assertEqual(len(at.exception), 0)
 
 
 # ==========================================================
@@ -100,14 +100,14 @@ class TestDisplayRecentGames(unittest.TestCase):
             lambda: modules.display_recent_games(sessions)
         ).run()
 
-        self.assertIsNone(at.exception)
+        self.assertEqual(len(at.exception), 0)
 
     def test_recent_games_empty(self):
         at = AppTest.from_function(
             lambda: modules.display_recent_games([])
         ).run()
 
-        self.assertIsNone(at.exception)
+        self.assertEqual(len(at.exception), 0)
 
 
 # ==========================================================
@@ -124,7 +124,7 @@ class TestDisplayPersonalizedRecommendations(unittest.TestCase):
             lambda: modules.display_personalized_recommendations(sessions, friends)
         ).run()
 
-        self.assertIsNone(at.exception)
+        self.assertEqual(len(at.exception), 0)
 
 
 if __name__ == "__main__":
