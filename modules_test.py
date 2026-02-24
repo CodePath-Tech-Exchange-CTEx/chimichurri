@@ -2,46 +2,129 @@
 # modules_test.py
 #
 # This file contains tests for modules.py.
-#
-# You will write these tests in Unit 2.
 #############################################################################
 
 import unittest
+from datetime import datetime, timedelta
 from streamlit.testing.v1 import AppTest
-from modules import display_post, display_activity_summary, display_genai_advice, display_recent_workouts
-
-# Write your tests below
-
-class TestDisplayPost(unittest.TestCase):
-    """Tests the display_post function."""
-
-    def test_foo(self):
-        """Tests foo."""
-        pass
+import modules
 
 
-class TestDisplayActivitySummary(unittest.TestCase):
-    """Tests the display_activity_summary function."""
+# ------------------------------------------------------------
+# Helper Test Data
+# ------------------------------------------------------------
 
-    def test_foo(self):
-        """Tests foo."""
-        pass
+def sample_sessions():
+    now = datetime.now()
+    return [
+        {
+            "sport": "Soccer",
+            "start_time": now - timedelta(hours=2),
+            "end_time": now - timedelta(hours=1),
+            "location": "Central Park"
+        },
+        {
+            "sport": "Basketball",
+            "start_time": now - timedelta(hours=4),
+            "end_time": now - timedelta(hours=3),
+            "location": "Downtown Court"
+        }
+    ]
 
 
-class TestDisplayGenAiAdvice(unittest.TestCase):
-    """Tests the display_genai_advice function."""
+# ==========================================================
+# get_sport_icon Tests (True Unit Tests)
+# ==========================================================
 
-    def test_foo(self):
-        """Tests foo."""
-        pass
+class TestGetSportIcon(unittest.TestCase):
+
+    def test_known_sport(self):
+        self.assertEqual(modules.get_sport_icon("Soccer"), "⚽")
+
+    def test_unknown_sport_defaults(self):
+        self.assertEqual(modules.get_sport_icon("Cricket"), "🏃")
 
 
-class TestDisplayRecentWorkouts(unittest.TestCase):
-    """Tests the display_recent_workouts function."""
+# ==========================================================
+# display_map Tests
+# ==========================================================
 
-    def test_foo(self):
-        """Tests foo."""
-        pass
+class TestDisplayMap(unittest.TestCase):
+
+    def test_display_map_renders(self):
+        user_location = {
+            "lat": 30.0900,
+            "lng": -95.9900
+        }
+
+        at = AppTest.from_function(
+            lambda: modules.display_map(user_location)
+        ).run()
+
+        self.assertIsNone(at.exception)
+
+
+# ==========================================================
+# display_session_summary Tests
+# ==========================================================
+
+class TestDisplaySessionSummary(unittest.TestCase):
+
+    def test_summary_with_data(self):
+        sessions = sample_sessions()
+
+        at = AppTest.from_function(
+            lambda: modules.display_session_summary(sessions)
+        ).run()
+
+        self.assertIsNone(at.exception)
+
+    def test_summary_empty(self):
+        at = AppTest.from_function(
+            lambda: modules.display_session_summary([])
+        ).run()
+
+        self.assertIsNone(at.exception)
+
+
+# ==========================================================
+# display_recent_games Tests
+# ==========================================================
+
+class TestDisplayRecentGames(unittest.TestCase):
+
+    def test_recent_games_with_data(self):
+        sessions = sample_sessions()
+
+        at = AppTest.from_function(
+            lambda: modules.display_recent_games(sessions)
+        ).run()
+
+        self.assertIsNone(at.exception)
+
+    def test_recent_games_empty(self):
+        at = AppTest.from_function(
+            lambda: modules.display_recent_games([])
+        ).run()
+
+        self.assertIsNone(at.exception)
+
+
+# ==========================================================
+# display_personalized_recommendations Tests
+# ==========================================================
+
+class TestDisplayPersonalizedRecommendations(unittest.TestCase):
+
+    def test_recommendations_renders(self):
+        sessions = sample_sessions()
+        friends = ["Alice", "Bob"]
+
+        at = AppTest.from_function(
+            lambda: modules.display_personalized_recommendations(sessions, friends)
+        ).run()
+
+        self.assertIsNone(at.exception)
 
 
 if __name__ == "__main__":
