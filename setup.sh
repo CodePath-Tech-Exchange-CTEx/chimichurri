@@ -3,7 +3,7 @@ PROJECT_ID=carlos-negron-uprm
 PROJECT_NUMBER=160020656693
 SERVICE_NAME=group-6
 GITHUB_ORG=CodePath-Tech-Exchange-CTEx
-GITHUB_REPO=ISE_Lab2_CICD_Carlos_Negron
+GITHUB_REPO=chimichurri
 ### VARIABLES TO CHANGE - END
 
 # ----------- Set Up GCP Project ----------- #
