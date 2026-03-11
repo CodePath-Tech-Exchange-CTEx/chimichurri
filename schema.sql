@@ -5,7 +5,6 @@
 Create Table 'project.database.users' (
     user_id   String Not Null,
     email    String Not Null,
-    username String Not Null,
     created_at  Timestamp Not Null Default Current_Timestamp(),
 
     home_lat  Float64,
@@ -24,10 +23,10 @@ Options(
 );
 
 -- =============================================================
--- Friends Table
+-- Friendship Table
 -- =============================================================
 
-Create Table 'project.database.friends' (
+Create Table 'project.database.friendship' (
     user_id        STRING NOT NULL,
     friend_id      STRING NOT NULL,
     status         STRING NOT NULL,  -- 'pending', 'accepted', 'blocked'
@@ -81,7 +80,7 @@ CREATE TABLE 'project.database.events' (
         geog GEOGRAPHY
     >,
 
-    created_by  STRING NOT NULL,
+    created_by  STRING NOT NULL, -- Foreign key to user_id
     start_time  TIMESTAMP NOT NULL,
     end_time    TIMESTAMP NOT NULL,
 
@@ -103,8 +102,8 @@ OPTIONS (
 -- =============================================================
 
 CREATE TABLE 'project.database.event_participants' (
-    event_id    STRING NOT NULL,
-    user_id     STRING NOT NULL,
+    event_id    STRING NOT NULL, -- Foreign key to event
+    user_id     STRING NOT NULL, -- Foreign key to user_id
     joined_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
     status      STRING DEFAULT 'joined' -- joined, cancelled, waitlisted
 )
@@ -125,8 +124,8 @@ AND status = 'joined';
 
 CREATE TABLE 'project.database.user_activity' (
     activity_id      STRING NOT NULL DEFAULT GENERATE_UUID(),
-    user_id          STRING NOT NULL,
-    event_id         STRING,
+    user_id          STRING NOT NULL, -- Foreign key to user_id
+    event_id         STRING, -- Foreign key to event
     sport            STRING,
     duration_minutes INT64,
 
@@ -152,8 +151,8 @@ OPTIONS (
 -- =============================================================
 
 CREATE TABLE 'project.database.user_recommendations' (
-    user_id       STRING NOT NULL,
-    event_id      STRING NOT NULL,
+    user_id       STRING NOT NULL, -- Foreign key to user_id
+    event_id      STRING NOT NULL, -- Foreign key to event
     score         FLOAT64 NOT NULL,
     generated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
 )
