@@ -2,8 +2,8 @@ from google.cloud import bigquery
 
 client = bigquery.Client()
 
-PROJECT_ID = "project-id" #Needs to be updated with the actual project ID
-DATSET = "dataset-name" #Needs to be updated with the actual dataset name when created
+PROJECT_ID = "carlos-negron-uprm" #Needs to be updated with the actual project ID
+DATASET = "database" #Needs to be updated with the actual dataset name when created
 
 def run_query(query, params=None):
     """
