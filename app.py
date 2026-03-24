@@ -59,7 +59,3 @@ elif menu == "Profile":
 elif menu == "Find a Game":
     st.header("Find a Game")
     st.write("Find a game page coming soon.")
-
-elif menu == "Friends":
-    st.header("Friends")
-    st.write("Friends page coming soon.")
