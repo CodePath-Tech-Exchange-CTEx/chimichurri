@@ -805,8 +805,9 @@ def get_genai_advice(user_id: str) -> str:
                 "role": "user",
                 "content": (
                     f"{context} "
-                    "Give them a short (2-3 sentence), friendly, motivational sports tip "
-                    "or encouragement. Be specific to their activity if possible."
+                    "Give them a short (2-3 sentence), friendly tip about joining local sports "
+                    "events, connecting with friends through sports, or getting more involved in "
+                    "their sports community. Be specific to their recent activities if possible."
                 ),
             }
         ],
