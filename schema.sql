@@ -154,3 +154,19 @@ CLUSTER BY user_id
 OPTIONS (
     description = "Precomputed recommendations for fast API serving"
 );
+
+
+-- =============================================================
+-- Posts Table (NEW - required for community share feature)
+-- =============================================================
+CREATE TABLE `carlos-negron-uprm.database.posts` (
+    post_id    STRING NOT NULL,
+    user_id    STRING NOT NULL,
+    content    STRING,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
+)
+PARTITION BY DATE(created_at)
+CLUSTER BY user_id
+OPTIONS (
+    description = "Community posts shared by users"
+);
