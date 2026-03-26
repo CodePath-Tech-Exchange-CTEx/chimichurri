@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from collections import Counter
 from datetime import datetime
-
+ 
 def get_sport_icon(sport): # line written by Gemini
     icons = {
         "Soccer": "⚽",
@@ -11,7 +11,7 @@ def get_sport_icon(sport): # line written by Gemini
         "Tennis": "🎾"
     }
     return icons.get(sport, "🏃")
-
+ 
 def display_map(user_location):
     st.subheader("📍 Nearby Courts and Fields")
     mock_fields = [
@@ -24,13 +24,13 @@ def display_map(user_location):
     for field in mock_fields:
         with st.expander(f"{get_sport_icon(field['sport'])} {field['name']}"):
             st.write(f"This venue is ready for a **{field['sport']}** match!")
-
+ 
 def display_session_summary(sessions): 
     st.subheader("📊 Your Stats") # line written by Gemini
     if not sessions:
         st.write("No data yet.")
         return
-
+ 
     total_hours = sum((s["end_time"] - s["start_time"]).total_seconds() / 3600 for s in sessions)
     sports = [s["sport"] for s in sessions]
     fav_sport = Counter(sports).most_common(1)[0][0]
@@ -44,21 +44,39 @@ def display_session_summary(sessions):
         "Value": [f"{get_sport_icon(fav_sport)} {fav_sport}", Counter([s["location"] for s in sessions]).most_common(1)[0][0]]
     }
     st.table(pd.DataFrame(summary_data))
-
+ 
 def display_recent_games(sessions):
     st.subheader("🕒 Recent Activity") # line written by Gemini
+    if not sessions:
+        st.dataframe(pd.DataFrame(), use_container_width=True, hide_index=True)
+        return
+ 
     recent_list = []
     for s in sessions[::-1]:
+        # Handle both datetime objects and strings from BigQuery
+        start = s["start_time"]
+        end   = s["end_time"]
+        if isinstance(start, str):
+            start = datetime.fromisoformat(start)
+        if isinstance(end, str):
+            end = datetime.fromisoformat(end)
+ 
+        duration = (end - start).total_seconds() / 3600
         recent_list.append({
-            "Sport": f"{get_sport_icon(s['sport'])} {s['sport']}",
-            "Date": s["start_time"].strftime("%b %d"),
-            "Duration": f"{(s['end_time'] - s['start_time']).total_seconds()/3600:.1f}h",
+            "Sport":    f"{get_sport_icon(s['sport'])} {s['sport']}",
+            "Date":     start.strftime("%b %d"),
+            "Duration": f"{duration:.1f}h" if duration > 0 else "N/A",
             "Location": s["location"]
         })
     st.dataframe(pd.DataFrame(recent_list), use_container_width=True, hide_index=True)
-
+ 
 def display_personalized_recommendations(sessions, friends):
     st.subheader("🌟 Recommended") # line written by Gemini
+ 
+    if not sessions:
+        st.info("Complete some sessions to get personalized recommendations!")
+        return
+ 
     fav_sport = Counter([s["sport"] for s in sessions]).most_common(1)[0][0]
     
     # Mock recommendation
