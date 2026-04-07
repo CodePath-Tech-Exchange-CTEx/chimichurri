@@ -9,6 +9,7 @@ Jean Cruz
 ## Deployment
 
 Live app: https://group-6-chqcn5fotq-uc.a.run.app/
+UI prototype: sports-connect.netlify.app
 
 # Setup
 
