@@ -1,0 +1,147 @@
+=====================================================================
+SPORTS CONNECT — UNIT 4 FEATURE SPRINT PLANNING
+=====================================================================
+ 
+=====================================================================
+FEATURE 1: Search Radius Drag Feature
+=====================================================================
+ 
+Description:
+  Allow users to drag a radius slider or handle on the map to filter
+  nearby games dynamically. The game list updates in real time as the
+  user adjusts the search radius. The map is moved to the left column
+  and made larger, with the game list on the right and smaller, based
+  on usability testing feedback.
+ 
+Tasks:
+ 
+  Task 1: Implement draggable radius slider on the map
+  Description: Add a slider UI component on the Find a Game page that
+    lets users drag to set their search radius (e.g. 1–20 km). The
+    map should visually update to show the radius circle as the user
+    drags.
+  Priority: High
+  Story Points: 5
+  Acceptance Criteria:
+    - A slider or drag handle is visible on the map page
+    - The radius circle updates in real time as the user drags
+    - The slider value is displayed (e.g. "5 km")
+ 
+  Task 2: Filter game list based on radius
+  Description: When the user adjusts the search radius, query
+    data_fetcher.get_nearby_events() with the new radius value and
+    update the displayed game list without a full page reload.
+  Priority: High
+  Story Points: 5
+  Acceptance Criteria:
+    - Game list updates when radius changes
+    - Only games within the selected radius are shown
+    - Empty state message shown if no games are in range
+ 
+  Task 3: Swap map and list column layout
+  Description: Based on usability feedback, move the map to the left
+    column (larger) and the game list to the right column (smaller).
+    Consolidate search filters to a single location.
+  Priority: Medium
+  Story Points: 3
+  Acceptance Criteria:
+    - Map is displayed on the left and is larger than before
+    - Game list is displayed on the right
+    - Search filters appear in only one place on the page
+ 
+  Task 4: Clarify map and game list relationship
+  Description: Add clear labels or visual indicators to make it
+    obvious that the map and game list are two views of the same
+    data, not separate flows. Fix the join button bugs (unresponsive
+    soccer join button, tennis spot count not updating).
+  Priority: High
+  Story Points: 3
+  Acceptance Criteria:
+    - Map and list are clearly labeled as the same data
+    - All join buttons are responsive
+    - Spot counts update after a user joins
+ 
+  Task 5: Post-join prompt to invite friends
+  Description: After a user joins a game, show a prompt that asks
+    if they would like to invite friends to the same game, with a
+    shortcut to the Friends/Messages tab.
+  Priority: Medium
+  Story Points: 3
+  Acceptance Criteria:
+    - A prompt appears after successfully joining a game
+    - Prompt includes an option to invite friends
+    - Prompt can be dismissed without inviting anyone
+ 
+ 
+=====================================================================
+FEATURE 2: Friends Chat Feature
+=====================================================================
+ 
+Description:
+  Add a messaging/chat interface within the app so users can
+  communicate with their accepted friends. Based on usability
+  testing, the feature should be renamed or restructured so it is
+  discoverable — users expect chat under "Messages" not "Friends."
+  A confirmation dialog should be added when accepting friend
+  requests to prevent accidental actions.
+ 
+Tasks:
+ 
+  Task 1: Design and create the Messages/Chat UI
+  Description: Create a chat_page.py with a conversation list view
+    and a message thread view. Users can select a friend and send
+    messages. Rename or restructure the Friends tab so messaging
+    is discoverable (e.g. add a "Messages" section or rename tab).
+  Priority: High
+  Story Points: 8
+  Acceptance Criteria:
+    - A conversation list shows all friends the user has chatted with
+    - Clicking a friend opens a message thread
+    - Users can type and send a message
+    - The feature is discoverable (labeled "Messages" or clearly linked)
+ 
+  Task 2: Create messages table in BigQuery
+  Description: Add a messages table to the database schema to store
+    chat messages between users. Create the corresponding
+    data_fetcher functions: send_message() and get_messages().
+  Priority: High
+  Story Points: 5
+  Acceptance Criteria:
+    - Messages table exists in BigQuery with fields:
+      message_id, sender_id, receiver_id, content, timestamp
+    - send_message() inserts a new message row
+    - get_messages() returns messages between two users ordered by timestamp
+ 
+  Task 3: Add confirmation dialog for friend requests
+  Description: When a user accepts a friend request, show a
+    confirmation dialog with Accept and Cancel options before
+    committing the action. Show a success message after acceptance.
+  Priority: High
+  Story Points: 3
+  Acceptance Criteria:
+    - Confirmation dialog appears before accepting a friend request
+    - User can cancel without accepting
+    - Success message shown after acceptance
+ 
+  Task 4: Write unit tests for new data_fetcher functions
+  Description: Add tests for send_message() and get_messages() in
+    data_fetcher_test.py using mocking so no real DB calls are made.
+  Priority: Medium
+  Story Points: 3
+  Acceptance Criteria:
+    - Tests for send_message() verify INSERT query and correct params
+    - Tests for get_messages() verify correct user filtering and ordering
+    - All new tests pass in GitHub Actions
+ 
+  Task 5: Move profile access into Settings
+  Description: Based on usability feedback, remove the dedicated
+    Profile top-level button and move profile editing into a Settings
+    section. Replace the profile page with the Activity page as the
+    main user page.
+  Priority: Low
+  Story Points: 2
+  Acceptance Criteria:
+    - Profile editing is accessible through Settings
+    - Activity page is the main user-facing page
+    - Map is removed from the activity and profile pages
+  
