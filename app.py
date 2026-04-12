@@ -199,6 +199,29 @@ st.markdown("""
         margin-bottom: 12px;
     }
     
+    .tip-card {
+        background-color: #1e2e1e;
+        border: 0.5px solid rgba(34, 197, 94, 0.3);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .tip-card-title {
+        font-size: 12px;
+        color: var(--primary-green);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+    }
+    
+    .tip-card-content {
+        font-size: 13px;
+        color: #ccc;
+        line-height: 1.6;
+    }
+    
     /* Event card styling */
     .event-card {
         background-color: var(--bg-tertiary);
@@ -342,7 +365,6 @@ if "joined_events" not in st.session_state:
 
 # ── MOCK DATA ──
 SPORTS = ["Soccer", "Basketball", "Volleyball", "Tennis"]
-SKILL_LEVELS = ["Beginner", "Intermediate", "Advanced"]
 
 MOCK_EVENTS = [
     {
@@ -481,6 +503,24 @@ def render_event_card(event):
                 st.session_state["joined_events"].add(event["id"])
                 st.rerun()
 
+def display_map(user_location):
+    """Display map with nearby courts and fields"""
+    st.subheader("📍 Nearby Courts and Fields")
+    mock_fields = [
+        {"name": "Central Park Soccer Field", "sport": "Soccer", "lat": user_location["lat"] + 0.002, "lon": user_location["lng"] + 0.002},
+        {"name": "Downtown Basketball Court", "sport": "Basketball", "lat": user_location["lat"] - 0.0015, "lon": user_location["lng"] + 0.001},
+        {"name": "Beach Volleyball Court", "sport": "Volleyball", "lat": user_location["lat"] + 0.001, "lon": user_location["lng"] - 0.002},
+    ]
+    st.map(pd.DataFrame(mock_fields), zoom=14)
+
+def get_daily_tip(user_id):
+    """Fetch daily motivational tip from Claude AI via data_fetcher"""
+    try:
+        tip = data_fetcher.get_genai_advice(user_id)
+        return tip
+    except Exception as e:
+        return f"Keep pushing your limits and connecting with fellow athletes! 💪"
+
 # ── PAGES ──
 page = st.session_state["current_page"]
 
@@ -508,6 +548,17 @@ if page == "home":
             st.session_state["current_page"] = "activity"
             st.rerun()
     
+    # Daily Tip Section
+    st.markdown("<div class='section-label'>💡 Daily Tip</div>", unsafe_allow_html=True)
+    with st.spinner("Loading your personalized tip..."):
+        daily_tip = get_daily_tip(st.session_state["user_id"])
+    st.markdown(f"""
+    <div class="tip-card">
+        <div class="tip-card-title">🌟 Today's Motivation</div>
+        <div class="tip-card-content">{daily_tip}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown("<div class='section-label'>⚽ Upcoming Games</div>", unsafe_allow_html=True)
     for event in MOCK_EVENTS[:3]:
         render_event_card(event)
@@ -515,25 +566,29 @@ if page == "home":
 elif page == "find_a_game":
     st.markdown("<h1 class='page-title'>Find a Game</h1>", unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        search = st.text_input("Search sport, venue, or location…", placeholder="Search…")
-    with col2:
-        skill_filter = st.selectbox("Skill Level", ["All Levels", "Beginner", "Intermediate", "Advanced"], label_visibility="collapsed")
-    
+    search = st.text_input("Search sport, venue, or location…", placeholder="Search…")
     st.markdown("---")
-    st.markdown("<div class='section-label'>Available Games</div>", unsafe_allow_html=True)
     
-    filtered_events = MOCK_EVENTS
-    if search:
-        filtered_events = [e for e in MOCK_EVENTS if search.lower() in e["venue"].lower() or search.lower() in e["sport"].lower()]
+    # Two-column layout: events on left, map on right
+    col_events, col_map = st.columns([1.5, 1])
     
-    if not filtered_events:
-        st.info("No games match your filters")
-    else:
-        for event in filtered_events:
-            with st.expander(f"{event['emoji']} {event['sport']} - {event['venue']}", expanded=False):
+    with col_events:
+        st.markdown("<div class='section-label'>Available Games</div>", unsafe_allow_html=True)
+        
+        filtered_events = MOCK_EVENTS
+        if search:
+            filtered_events = [e for e in MOCK_EVENTS if search.lower() in e["venue"].lower() or search.lower() in e["sport"].lower()]
+        
+        if not filtered_events:
+            st.info("No games match your filters")
+        else:
+            for event in filtered_events:
                 render_event_card(event)
+    
+    with col_map:
+        # Display map with default location
+        user_location = {"lat": 25.7617, "lng": -80.1918}
+        display_map(user_location)
 
 elif page == "messages":
     st.markdown("<h1 class='page-title'>Messages</h1>", unsafe_allow_html=True)
