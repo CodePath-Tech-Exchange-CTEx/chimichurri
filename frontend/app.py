@@ -374,6 +374,9 @@ if "joined_events" not in st.session_state:
 if "radius_km" not in st.session_state:
     st.session_state["radius_km"] = 5.0
 
+if "show_invite_dialog" not in st.session_state:
+    st.session_state["show_invite_dialog"] = None
+
 
 # ── SIDEBAR NAVIGATION ──
 with st.sidebar:
@@ -391,15 +394,6 @@ with st.sidebar:
     pages = ["Home", "Find a Game", "Messages", "Activity"]
     selected = st.radio("Navigation", pages, index=0, label_visibility="collapsed")
     st.session_state["current_page"] = selected.lower().replace(" ", "_")
-
-    st.markdown("---")
-    st.markdown("<div class='section-label'>📍 Search Radius</div>", unsafe_allow_html=True)
-    st.session_state["radius_km"] = st.slider(
-        "Radius (km)", min_value=1.0, max_value=20.0,
-        value=st.session_state["radius_km"], step=0.5,
-        label_visibility="collapsed",
-    )
-    st.caption(f"Showing games within **{st.session_state['radius_km']} km**")
 
     st.markdown("---")
     col_user, col_gear = st.columns([4, 1])
@@ -467,6 +461,7 @@ def render_event_card(event):
                 st.caption(f"⚠️ {spots_left} spot{'s' if spots_left > 1 else ''} left")
             if st.button("Join", use_container_width=True, key=f"join_{event['id']}"):
                 st.session_state["joined_events"].add(event["id"])
+                st.session_state["show_invite_dialog"] = event["venue"]
                 st.toast(f"You joined {event['venue']}! 🎉", icon="✅")
                 st.rerun()
 
@@ -488,8 +483,25 @@ def get_daily_tip(user_id):
     except Exception as e:
         return f"Keep pushing your limits and connecting with fellow athletes! 💪"
 
+@st.dialog("Invite Friends")
+def invite_friends_dialog(venue_name):
+    st.write(f"You just joined **{venue_name}**! Would you like to invite your friends to play?")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Invite Friends", use_container_width=True, type="primary"):
+            st.session_state["current_page"] = "messages"
+            st.session_state["show_invite_dialog"] = None
+            st.rerun()
+    with col2:
+        if st.button("Maybe Later", use_container_width=True):
+            st.session_state["show_invite_dialog"] = None
+            st.rerun()
+
 # ── PAGES ──
 page = st.session_state["current_page"]
+
+if st.session_state["show_invite_dialog"]:
+    invite_friends_dialog(st.session_state["show_invite_dialog"])
 
 if page == "home":
     st.markdown("<h1 class='page-title'>Home</h1>", unsafe_allow_html=True)
@@ -543,6 +555,14 @@ elif page == "find_a_game":
     col_map, col_events = st.columns([1, 1.5])
 
     with col_map:
+        st.markdown("<div class='section-label'>📍 Search Radius</div>", unsafe_allow_html=True)
+        st.session_state["radius_km"] = st.slider(
+            "Radius (km)", min_value=1.0, max_value=20.0,
+            value=st.session_state["radius_km"], step=0.5,
+            label_visibility="collapsed",
+        )
+        st.caption(f"Showing games within **{st.session_state['radius_km']} km**")
+        st.markdown("---")
         user_location = {"lat": 25.7617, "lng": -80.1918}
         display_map(user_location)
         st.caption("📌 Map shows all venues. Use the radius slider to filter the game list.")
