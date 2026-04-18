@@ -31,6 +31,9 @@ st.set_page_config(
 # Custom CSS for dark theme with green accents
 st.markdown("""
 <style>
+    [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
     :root {
         --primary-green: #22c55e;
         --bg-dark: #111;
