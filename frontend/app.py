@@ -8,6 +8,14 @@ USER_LAT, USER_LNG = 25.7617, -80.1918
 MOCK_EVENTS  = data_fetcher.get_events_for_ui(USER_LAT, USER_LNG)
 MOCK_FRIENDS = data_fetcher.get_friends_for_ui(data_fetcher.CURRENT_USER_ID)
 
+# Ensure there are at least 3 friends for testing the messaging feature
+if len(MOCK_FRIENDS) < 3:
+    MOCK_FRIENDS.extend([
+        {"name": "Alice Smith", "initials": "AS", "sport": "Soccer", "emoji": "⚽", "online": True, "user_id": "mock_1"},
+        {"name": "Bob Johnson", "initials": "BJ", "sport": "Basketball", "emoji": "🏀", "online": False, "user_id": "mock_2"},
+        {"name": "Charlie Davis", "initials": "CD", "sport": "Tennis", "emoji": "🎾", "online": True, "user_id": "mock_3"}
+    ])
+
 # Use the generated user instead of hardcoded "Carlos Martinez"
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = data_fetcher.CURRENT_USER_ID
@@ -605,25 +613,74 @@ elif page == "find_a_game":
 elif page == "messages":
     st.markdown("<h1 class='page-title'>Messages</h1>", unsafe_allow_html=True)
     
-    search = st.text_input("Search players by name or sport…", placeholder="Search…")
-    
-    st.markdown("---")
-    st.markdown("<div class='section-label'>Your Friends</div>", unsafe_allow_html=True)
-    
-    filtered_friends = MOCK_FRIENDS
-    if search:
-        filtered_friends = [f for f in MOCK_FRIENDS if search.lower() in f["name"].lower() or search.lower() in f["sport"].lower()]
-    
-    for friend in filtered_friends:
-        col1, col2, col3 = st.columns([3, 2, 1])
-        with col1:
-            status = "🟢 Online" if friend["online"] else "⚫ Offline"
-            st.markdown(f"**{friend['name']}** ({status})")
-            st.caption(f"{friend['emoji']} {friend['sport']}")
-        with col2:
-            st.button("Message", key=f"msg_{friend['name']}", use_container_width=True)
-        with col3:
-            st.button("Invite", key=f"inv_{friend['name']}", use_container_width=True)
+    if "active_chat" not in st.session_state:
+        st.session_state["active_chat"] = None
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = {}
+        
+    list_col, chat_col = None, None
+    if st.session_state["active_chat"]:
+        list_col, chat_col = st.columns([1, 1.5])
+    else:
+        list_col = st.container()
+
+    with list_col:
+        search = st.text_input("Search players by name or sport…", placeholder="Search…")
+        
+        st.markdown("---")
+        st.markdown("<div class='section-label'>Your Friends</div>", unsafe_allow_html=True)
+        
+        filtered_friends = MOCK_FRIENDS
+        if search:
+            filtered_friends = [f for f in MOCK_FRIENDS if search.lower() in f["name"].lower() or search.lower() in f["sport"].lower()]
+        
+        for friend in filtered_friends:
+            col1, col2, col3 = st.columns([3, 2, 1])
+            with col1:
+                status = "🟢 Online" if friend["online"] else "⚫ Offline"
+                st.markdown(f"**{friend['name']}** ({status})")
+                st.caption(f"{friend['emoji']} {friend['sport']}")
+            with col2:
+                if st.button("Message", key=f"msg_{friend['name']}", use_container_width=True):
+                    st.session_state["active_chat"] = friend['name']
+                    if friend['name'] not in st.session_state["chat_history"]:
+                        st.session_state["chat_history"][friend['name']] = [
+                            {"role": "assistant", "content": f"Hi! Let's play some {friend['sport']} soon!"}
+                        ]
+                    st.rerun()
+            with col3:
+                if st.button("Invite", key=f"inv_{friend['name']}", use_container_width=True):
+                    st.session_state["active_chat"] = friend['name']
+                    if friend['name'] not in st.session_state["chat_history"]:
+                        st.session_state["chat_history"][friend['name']] = []
+                    st.session_state["chat_history"][friend['name']].append(
+                        {"role": "user", "content": f"Hey! I just joined a game. Do you want to come along?"}
+                    )
+                    st.toast(f"Invitation sent to {friend['name']}!", icon="📩")
+                    st.rerun()
+
+    if st.session_state["active_chat"]:
+        with chat_col:
+            active_friend = st.session_state["active_chat"]
+            
+            col_title, col_btn = st.columns([4, 1])
+            with col_title:
+                st.markdown(f"### Chat with {active_friend}")
+            with col_btn:
+                if st.button("✖", key="close_chat", help="Close Chat"):
+                    st.session_state["active_chat"] = None
+                    st.rerun()
+            
+            chat_container = st.container(height=400)
+            with chat_container:
+                for message in st.session_state["chat_history"].get(active_friend, []):
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
+
+            if prompt := st.chat_input("Type your message..."):
+                st.session_state["chat_history"][active_friend].append({"role": "user", "content": prompt})
+                st.session_state["chat_history"][active_friend].append({"role": "assistant", "content": f"Got it! I will see you there."})
+                st.rerun()
 
 elif page == "activity":
     st.markdown("<h1 class='page-title'>Activity</h1>", unsafe_allow_html=True)
