@@ -392,8 +392,18 @@ with st.sidebar:
     st.markdown("---")
 
     pages = ["Home", "Find a Game", "Messages", "Activity"]
-    selected = st.radio("Navigation", pages, index=0, label_visibility="collapsed")
-    st.session_state["current_page"] = selected.lower().replace(" ", "_")
+    
+    current_page = st.session_state.get("current_page", "home")
+    page_ids = [p.lower().replace(" ", "_") for p in pages]
+    idx = page_ids.index(current_page) if current_page in page_ids else None
+    
+    selected = st.radio("Navigation", pages, index=idx, label_visibility="collapsed")
+    
+    if selected:
+        selected_id = selected.lower().replace(" ", "_")
+        if selected_id != current_page:
+            st.session_state["current_page"] = selected_id
+            st.rerun()
 
     st.markdown("---")
     col_user, col_gear = st.columns([4, 1])
