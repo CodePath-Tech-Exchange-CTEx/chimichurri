@@ -1,0 +1,20 @@
+# Flask backend — Sports Connect
+FROM python:3.11-slim
+ 
+EXPOSE 8080
+ 
+WORKDIR /app
+ 
+# Install deps first (layer-cached unless requirements.txt changes)
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+ 
+# Copy source
+COPY . ./
+ 
+ENV PYTHONPATH="/app:${PYTHONPATH}"
+ENV PORT=8080
+ 
+# gunicorn: 2 workers is safe for Cloud Run's 1-2 vCPU default
+# --timeout 120 gives Vertex AI embedding calls room to breathe
+ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120", "app:app"]
