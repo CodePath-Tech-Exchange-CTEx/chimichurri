@@ -767,6 +767,70 @@ def get_friend_posts(user_id: str, limit: int = 10) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# MESSAGES FUNCTIONS
+# ---------------------------------------------------------------------------
+
+def send_message(sender_id: str, receiver_id: str, content: str) -> str:
+    """
+    Insert a new message into the messages table.
+
+    Returns the generated message_id (UUID string).
+    """
+    message_id = str(uuid.uuid4())
+    query = f"""
+        INSERT INTO {_tbl("messages")}
+            (message_id, sender_id, receiver_id, content, timestamp, `read`)
+        VALUES
+            (@message_id, @sender_id, @receiver_id, @content, CURRENT_TIMESTAMP(), FALSE)
+    """
+    params = [
+        bigquery.ScalarQueryParameter("message_id",  "STRING", message_id),
+        bigquery.ScalarQueryParameter("sender_id",   "STRING", sender_id),
+        bigquery.ScalarQueryParameter("receiver_id", "STRING", receiver_id),
+        bigquery.ScalarQueryParameter("content",     "STRING", content),
+    ]
+    run_query(query, params)
+    return message_id
+
+
+def get_messages(user_id: str, other_id: str, limit: int = 50) -> list[dict]:
+    """
+    Return all messages between user_id and other_id, oldest first.
+
+    Parameters
+    ----------
+    user_id  : The current user.
+    other_id : The other user in the conversation.
+    limit    : Max messages to return (default 50).
+
+    Returns
+    -------
+    List of message dicts with keys:
+    message_id, sender_id, receiver_id, content, timestamp, read.
+    """
+    query = f"""
+        SELECT
+            message_id,
+            sender_id,
+            receiver_id,
+            content,
+            timestamp,
+            `read`
+        FROM {_tbl("messages")}
+        WHERE (sender_id = @user_id AND receiver_id = @other_id)
+           OR (sender_id = @other_id AND receiver_id = @user_id)
+        ORDER BY timestamp ASC
+        LIMIT @limit
+    """
+    params = [
+        bigquery.ScalarQueryParameter("user_id",  "STRING", user_id),
+        bigquery.ScalarQueryParameter("other_id", "STRING", other_id),
+        bigquery.ScalarQueryParameter("limit",    "INT64",  limit),
+    ]
+    return run_query(query, params)
+
+
+# ---------------------------------------------------------------------------
 # GENAI ADVICE FUNCTION
 # ---------------------------------------------------------------------------
 
