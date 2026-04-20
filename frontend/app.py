@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from collections import Counter
 import local_data as data_fetcher
+import data_fetcher as real_db
 
 USER_LAT, USER_LNG = 25.7617, -80.1918
 MOCK_EVENTS  = data_fetcher.get_events_for_ui(USER_LAT, USER_LNG)
@@ -615,12 +616,35 @@ elif page == "find_a_game":
 
 elif page == "messages":
     st.markdown("<h1 class='page-title'>Messages</h1>", unsafe_allow_html=True)
-    
+
+    user_id = st.session_state["user_id"]
+
     if "active_chat" not in st.session_state:
-        st.session_state["active_chat"] = None
-    if "chat_history" not in st.session_state:
-        st.session_state["chat_history"] = {}
-        
+        st.session_state["active_chat"] = None  # stores friend's user_id
+
+    # Load real friends from database
+    try:
+        raw_friends = real_db.get_friends(user_id)
+
+    except Exception as e:
+        st.error(f"Could not load friends: {e}")
+        raw_friends = []
+
+    # Convert to UI format
+    sport_emoji = {
+        "Soccer": "⚽", "Basketball": "🏀", "Volleyball": "🏐",
+        "Tennis": "🎾", "Baseball": "⚾", "Pickleball": "🏓",
+    }
+    friends = []
+    for f in raw_friends:
+        email = f.get("email", "")
+        name = email.split("@")[0].replace(".", " ").title() if email else f["friend_id"][:8]
+        friends.append({
+            "user_id": f["friend_id"],
+            "name":    name,
+            "email":   email,
+        })
+
     list_col, chat_col = None, None
     if st.session_state["active_chat"]:
         list_col, chat_col = st.columns([1, 1.5])
@@ -628,62 +652,83 @@ elif page == "messages":
         list_col = st.container()
 
     with list_col:
-        search = st.text_input("Search players by name or sport…", placeholder="Search…")
-        
+        search = st.text_input("Search friends…", placeholder="Search…")
         st.markdown("---")
         st.markdown("<div class='section-label'>Your Friends</div>", unsafe_allow_html=True)
-        
-        filtered_friends = MOCK_FRIENDS
+
+        filtered_friends = friends
         if search:
-            filtered_friends = [f for f in MOCK_FRIENDS if search.lower() in f["name"].lower() or search.lower() in f["sport"].lower()]
-        
+            filtered_friends = [
+                f for f in friends
+                if search.lower() in f["name"].lower()
+                or search.lower() in f["email"].lower()
+            ]
+
+        if not filtered_friends:
+            st.info("No friends yet. Find a game and connect with other players!")
+
         for friend in filtered_friends:
             col1, col2, col3 = st.columns([3, 2, 1])
             with col1:
-                status = "🟢 Online" if friend["online"] else "⚫ Offline"
-                st.markdown(f"**{friend['name']}** ({status})")
-                st.caption(f"{friend['emoji']} {friend['sport']}")
+                st.markdown(f"**{friend['name']}**")
+                st.caption(friend["email"])
             with col2:
-                if st.button("Message", key=f"msg_{friend['name']}", use_container_width=True):
-                    st.session_state["active_chat"] = friend['name']
-                    if friend['name'] not in st.session_state["chat_history"]:
-                        st.session_state["chat_history"][friend['name']] = [
-                            {"role": "assistant", "content": f"Hi! Let's play some {friend['sport']} soon!"}
-                        ]
+                if st.button("Message", key=f"msg_{friend['user_id']}", use_container_width=True):
+                    st.session_state["active_chat"] = friend["user_id"]
                     st.rerun()
             with col3:
-                if st.button("Invite", key=f"inv_{friend['name']}", use_container_width=True):
-                    st.session_state["active_chat"] = friend['name']
-                    if friend['name'] not in st.session_state["chat_history"]:
-                        st.session_state["chat_history"][friend['name']] = []
-                    st.session_state["chat_history"][friend['name']].append(
-                        {"role": "user", "content": f"Hey! I just joined a game. Do you want to come along?"}
-                    )
-                    st.toast(f"Invitation sent to {friend['name']}!", icon="📩")
-                    st.rerun()
+                if st.button("Invite", key=f"inv_{friend['user_id']}", use_container_width=True):
+                    try:
+                        real_db.send_message(
+                            user_id,
+                            friend["user_id"],
+                            "Hey! I just joined a game. Do you want to come along?"
+                        )
+                        st.toast(f"Invitation sent to {friend['name']}!", icon="📩")
+                    except Exception as e:
+                        st.error(f"Could not send invite: {e}")
 
     if st.session_state["active_chat"]:
         with chat_col:
-            active_friend = st.session_state["active_chat"]
-            
+            active_friend_id = st.session_state["active_chat"]
+
+            # Find friend name for display
+            active_friend_name = next(
+                (f["name"] for f in friends if f["user_id"] == active_friend_id),
+                active_friend_id
+            )
+
             col_title, col_btn = st.columns([4, 1])
             with col_title:
-                st.markdown(f"### Chat with {active_friend}")
+                st.markdown(f"### Chat with {active_friend_name}")
             with col_btn:
                 if st.button("✖", key="close_chat", help="Close Chat"):
                     st.session_state["active_chat"] = None
                     st.rerun()
-            
+
+            # Load real messages from database
+            try:
+                messages = real_db.get_messages(user_id, active_friend_id)
+            except Exception as e:
+                st.error(f"Could not load messages: {e}")
+                messages = []
+
             chat_container = st.container(height=400)
             with chat_container:
-                for message in st.session_state["chat_history"].get(active_friend, []):
-                    with st.chat_message(message["role"]):
-                        st.markdown(message["content"])
+                if not messages:
+                    st.caption("No messages yet. Say hello! 👋")
+                for msg in messages:
+                    role = "user" if msg["sender_id"] == user_id else "assistant"
+                    with st.chat_message(role):
+                        st.markdown(msg["content"])
 
+            # Send new message
             if prompt := st.chat_input("Type your message..."):
-                st.session_state["chat_history"][active_friend].append({"role": "user", "content": prompt})
-                st.session_state["chat_history"][active_friend].append({"role": "assistant", "content": f"Got it! I will see you there."})
-                st.rerun()
+                try:
+                    real_db.send_message(user_id, active_friend_id, prompt)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Could not send message: {e}")
 
 elif page == "activity":
     st.markdown("<h1 class='page-title'>Activity</h1>", unsafe_allow_html=True)
