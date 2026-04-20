@@ -7,19 +7,6 @@ import data_fetcher as real_db
 
 USER_LAT, USER_LNG = 25.7617, -80.1918
 MOCK_EVENTS  = data_fetcher.get_events_for_ui(USER_LAT, USER_LNG)
-MOCK_FRIENDS = data_fetcher.get_friends_for_ui(data_fetcher.CURRENT_USER_ID)
-
-# Ensure there are at least 3 friends for testing the messaging feature
-if len(MOCK_FRIENDS) < 3:
-    MOCK_FRIENDS.extend([
-        {"name": "Alice Smith", "initials": "AS", "sport": "Soccer", "emoji": "⚽", "online": True, "user_id": "mock_1"},
-        {"name": "Bob Johnson", "initials": "BJ", "sport": "Basketball", "emoji": "🏀", "online": False, "user_id": "mock_2"},
-        {"name": "Charlie Davis", "initials": "CD", "sport": "Tennis", "emoji": "🎾", "online": True, "user_id": "mock_3"}
-    ])
-
-# Use the generated user instead of hardcoded "Carlos Martinez"
-if "user_id" not in st.session_state:
-    st.session_state["user_id"] = data_fetcher.CURRENT_USER_ID
 
 # ── PAGE CONFIG & CUSTOM CSS ──
 st.set_page_config(
@@ -60,7 +47,7 @@ st.markdown("""
         border-right: 1px solid var(--border-color);
     }
     
-    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderContainer"] {
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: var(--bg-secondary);
     }
     
@@ -93,10 +80,6 @@ st.markdown("""
         font-size: 13px;
         font-weight: 500;
         color: var(--text-primary);
-    }
-    
-    .nav-section {
-        margin: 20px 0 0 0;
     }
     
     .nav-item {
@@ -174,7 +157,6 @@ st.markdown("""
         text-overflow: ellipsis;
     }
     
-    /* Main content styling */
     [data-testid="stMainBlockContainer"] {
         background-color: var(--bg-dark);
     }
@@ -191,7 +173,6 @@ st.markdown("""
         margin-top: 0;
     }
     
-    /* Card styling */
     [data-testid="stMetricContainer"] {
         background-color: var(--bg-tertiary);
         border: 0.5px solid #2a2a2a;
@@ -242,7 +223,6 @@ st.markdown("""
         line-height: 1.6;
     }
     
-    /* Event card styling */
     .event-card {
         background-color: var(--bg-tertiary);
         border: 0.5px solid #2a2a2a;
@@ -298,7 +278,6 @@ st.markdown("""
         color: var(--text-secondary);
     }
     
-    /* Search bar */
     [data-testid="stTextInput"] input {
         background-color: var(--bg-tertiary) !important;
         border: 0.5px solid #2a2a2a !important;
@@ -306,7 +285,6 @@ st.markdown("""
         border-radius: 8px !important;
     }
     
-    /* Buttons */
     .stButton > button {
         background-color: var(--primary-green);
         color: #000;
@@ -321,21 +299,18 @@ st.markdown("""
         background-color: #16a34a;
     }
     
-    /* Tables */
     [data-testid="stDataFrame"] {
         background-color: var(--bg-secondary);
         border: 0.5px solid #222;
         border-radius: 10px;
     }
     
-    /* Expander */
     [data-testid="stExpander"] {
         background-color: var(--bg-tertiary);
         border: 0.5px solid #2a2a2a;
         border-radius: 10px;
     }
     
-    /* Selectbox and multiselect */
     [data-testid="stSelectbox"] > div > div,
     [data-testid="stMultiSelect"] > div > div {
         background-color: var(--bg-tertiary);
@@ -343,12 +318,10 @@ st.markdown("""
         border-radius: 8px;
     }
     
-    /* Divider */
     hr {
         border-color: var(--border-color);
     }
     
-    /* Section labels */
     .section-label {
         font-size: 12px;
         color: #666;
@@ -364,7 +337,6 @@ st.markdown("""
         color: var(--text-secondary);
     }
     
-    /* Metrics */
     .metric-value {
         font-size: 26px;
         font-weight: 500;
@@ -389,6 +361,12 @@ if "radius_km" not in st.session_state:
 if "show_invite_dialog" not in st.session_state:
     st.session_state["show_invite_dialog"] = None
 
+if "active_chat" not in st.session_state:
+    st.session_state["active_chat"] = None
+
+if "confirm_accept" not in st.session_state:
+    st.session_state["confirm_accept"] = None
+
 
 # ── SIDEBAR NAVIGATION ──
 with st.sidebar:
@@ -400,17 +378,17 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
+
     st.markdown("---")
 
     pages = ["Home", "Find a Game", "Messages", "Activity"]
-    
+
     current_page = st.session_state.get("current_page", "home")
     page_ids = [p.lower().replace(" ", "_") for p in pages]
     idx = page_ids.index(current_page) if current_page in page_ids else None
-    
+
     selected = st.radio("Navigation", pages, index=idx, label_visibility="collapsed")
-    
+
     if selected:
         selected_id = selected.lower().replace(" ", "_")
         if selected_id != current_page:
@@ -434,19 +412,17 @@ with st.sidebar:
             st.session_state["current_page"] = "settings"
             st.rerun()
 
+
 # ── HELPER FUNCTIONS ──
 def get_sport_icon(sport):
     icons = {"Soccer": "⚽", "Basketball": "🏀", "Volleyball": "🏐", "Tennis": "🎾"}
     return icons.get(sport, "🏃")
 
-def render_event_card(event):
-    """Render a single event card"""
-    is_joined = event["id"] in st.session_state["joined_events"]
 
-    # If the user joined, reflect that in the displayed count
+def render_event_card(event):
+    is_joined = event["id"] in st.session_state["joined_events"]
     display_joined = event["joined"] + (1 if is_joined else 0)
     spots_left = event["total"] - display_joined
-
     is_full = spots_left <= 0
 
     col1, col2 = st.columns([4, 1])
@@ -458,12 +434,8 @@ def render_event_card(event):
 
         col_meta1, col_meta2, col_meta3 = st.columns([1, 1, 1])
         with col_meta1:
-            # Show updated player count in green if user joined
             count_color = "#22c55e" if is_joined else "#ccc"
-            st.markdown(
-                f"<div class='card-meta' style='color:{count_color}'>👥 {display_joined}/{event['total']}</div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='card-meta' style='color:{count_color}'>👥 {display_joined}/{event['total']}</div>", unsafe_allow_html=True)
         with col_meta2:
             st.markdown(f"<span class='skill-pill'>{event['skill']}</span>", unsafe_allow_html=True)
         with col_meta3:
@@ -473,8 +445,7 @@ def render_event_card(event):
         if is_full and not is_joined:
             st.button("Full", disabled=True, use_container_width=True, key=f"btn_{event['id']}")
         elif is_joined:
-            if st.button("✓ Joined", use_container_width=True, key=f"cancel_{event['id']}",
-                         help="Click to cancel"):
+            if st.button("✓ Joined", use_container_width=True, key=f"cancel_{event['id']}", help="Click to cancel"):
                 st.session_state["joined_events"].discard(event["id"])
                 st.toast(f"You left {event['venue']}", icon="👋")
                 st.rerun()
@@ -487,8 +458,8 @@ def render_event_card(event):
                 st.toast(f"You joined {event['venue']}! 🎉", icon="✅")
                 st.rerun()
 
+
 def display_map(user_location):
-    """Display map with nearby courts and fields"""
     st.subheader("📍 Nearby Courts and Fields")
     mock_fields = [
         {"name": "Central Park Soccer Field", "sport": "Soccer", "lat": user_location["lat"] + 0.002, "lon": user_location["lng"] + 0.002},
@@ -497,13 +468,13 @@ def display_map(user_location):
     ]
     st.map(pd.DataFrame(mock_fields), zoom=14)
 
+
 def get_daily_tip(user_id):
-    """Fetch daily motivational tip from Claude AI via data_fetcher"""
     try:
-        tip = data_fetcher.get_genai_advice(user_id)
-        return tip
-    except Exception as e:
-        return f"Keep pushing your limits and connecting with fellow athletes! 💪"
+        return data_fetcher.get_genai_advice(user_id)
+    except Exception:
+        return "Keep pushing your limits and connecting with fellow athletes! 💪"
+
 
 @st.dialog("Invite Friends")
 def invite_friends_dialog(venue_name):
@@ -519,22 +490,54 @@ def invite_friends_dialog(venue_name):
             st.session_state["show_invite_dialog"] = None
             st.rerun()
 
+
+@st.dialog("Accept Friend Request")
+def confirm_accept_dialog(requester_id, requester_name):
+    """Confirmation dialog before accepting a friend request."""
+    st.write(f"Are you sure you want to accept **{requester_name}**'s friend request?")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("✅ Confirm", use_container_width=True, type="primary"):
+            try:
+                real_db.accept_friend_request(st.session_state["user_id"], requester_id)
+                st.session_state["confirm_accept"] = None
+                st.toast(f"You are now friends with {requester_name}! 🎉", icon="✅")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not accept: {e}")
+    with col2:
+        if st.button("❌ Cancel", use_container_width=True):
+            st.session_state["confirm_accept"] = None
+            st.rerun()
+
+
 # ── PAGES ──
 page = st.session_state["current_page"]
 
 if st.session_state["show_invite_dialog"]:
     invite_friends_dialog(st.session_state["show_invite_dialog"])
 
+if st.session_state.get("confirm_accept"):
+    requester_id = st.session_state["confirm_accept"]
+    # Try to get name from DB
+    try:
+        u = real_db.get_user(requester_id)
+        email = u["email"] if u else ""
+        requester_name = email.split("@")[0].replace(".", " ").title() if email else requester_id[:8]
+    except Exception:
+        requester_name = requester_id[:8]
+    confirm_accept_dialog(requester_id, requester_name)
+
 if page == "home":
     st.markdown("<h1 class='page-title'>Home</h1>", unsafe_allow_html=True)
-    
+
     st.markdown("""
     <div class="welcome-card">
         <h2>Welcome back, Carlos! 👋</h2>
         <p>Ready to find your next game? Browse upcoming events or invite your friends to play.</p>
     </div>
     """, unsafe_allow_html=True)
-    
+
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("🎯 Find a Game", use_container_width=True):
@@ -548,8 +551,7 @@ if page == "home":
         if st.button("📊 Activity", use_container_width=True):
             st.session_state["current_page"] = "activity"
             st.rerun()
-    
-    # Daily Tip Section
+
     st.markdown("<div class='section-label'>💡 Daily Tip</div>", unsafe_allow_html=True)
     with st.spinner("Loading your personalized tip..."):
         daily_tip = get_daily_tip(st.session_state["user_id"])
@@ -559,7 +561,7 @@ if page == "home":
         <div class="tip-card-content">{daily_tip}</div>
     </div>
     """, unsafe_allow_html=True)
-    
+
     st.markdown("<div class='section-label'>⚽ Upcoming Games</div>", unsafe_allow_html=True)
     for event in MOCK_EVENTS[:3]:
         render_event_card(event)
@@ -568,10 +570,10 @@ elif page == "find_a_game":
     st.markdown("<h1 class='page-title'>Find a Game</h1>", unsafe_allow_html=True)
 
     search = st.text_input("Search sport, venue, or location…", placeholder="Search…")
-    
+
     all_sports = ["All"] + sorted(list(set(e["sport"] for e in MOCK_EVENTS)))
     selected_sport = st.selectbox("Filter by Game", all_sports)
-    
+
     st.markdown("---")
 
     col_map, col_events = st.columns([1, 1.5])
@@ -591,12 +593,8 @@ elif page == "find_a_game":
 
     with col_events:
         radius = st.session_state["radius_km"]
-        st.markdown(
-            f"<div class='section-label'>Games within {radius} km</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown(f"<div class='section-label'>Games within {radius} km</div>", unsafe_allow_html=True)
 
-        # Apply radius filter first, then text search
         filtered_events = [e for e in MOCK_EVENTS if e["dist"] <= radius]
         if search:
             filtered_events = [
@@ -604,12 +602,12 @@ elif page == "find_a_game":
                 if search.lower() in e["venue"].lower()
                 or search.lower() in e["sport"].lower()
             ]
-            
+
         if selected_sport != "All":
             filtered_events = [e for e in filtered_events if e["sport"] == selected_sport]
 
         if not filtered_events:
-            st.info(f"No games found within {radius} km. Try increasing the radius in the sidebar.")
+            st.info(f"No games found within {radius} km. Try increasing the radius.")
         else:
             for event in filtered_events:
                 render_event_card(event)
@@ -619,22 +617,14 @@ elif page == "messages":
 
     user_id = st.session_state["user_id"]
 
-    if "active_chat" not in st.session_state:
-        st.session_state["active_chat"] = None  # stores friend's user_id
-
     # Load real friends from database
     try:
         raw_friends = real_db.get_friends(user_id)
-
     except Exception as e:
         st.error(f"Could not load friends: {e}")
         raw_friends = []
 
     # Convert to UI format
-    sport_emoji = {
-        "Soccer": "⚽", "Basketball": "🏀", "Volleyball": "🏐",
-        "Tennis": "🎾", "Baseball": "⚾", "Pickleball": "🏓",
-    }
     friends = []
     for f in raw_friends:
         email = f.get("email", "")
@@ -645,6 +635,24 @@ elif page == "messages":
             "email":   email,
         })
 
+    # Load pending friend requests sent TO the current user
+    try:
+        from google.cloud import bigquery as bq
+        pending = real_db.run_query(
+            f"""
+            SELECT f.user_id as requester_id, u.email
+            FROM `carlos-negron-uprm.database.friendship` f
+            JOIN `carlos-negron-uprm.database.users` u
+              ON u.user_id = f.user_id
+            WHERE f.friend_id    = @user_id
+              AND f.status       = 'pending'
+              AND f.requested_by = f.user_id
+            """,
+            [bq.ScalarQueryParameter("user_id", "STRING", user_id)]
+        )
+    except Exception:
+        pending = []
+
     list_col, chat_col = None, None
     if st.session_state["active_chat"]:
         list_col, chat_col = st.columns([1, 1.5])
@@ -652,8 +660,58 @@ elif page == "messages":
         list_col = st.container()
 
     with list_col:
-        search = st.text_input("Search friends…", placeholder="Search…")
+
+        # ── Add Friend section ──
+        st.markdown("<div class='section-label'>➕ Add Friend</div>", unsafe_allow_html=True)
+        add_email = st.text_input("Search by email…", placeholder="friend@email.com", key="add_friend_email")
+        if st.button("Send Request", key="send_request_btn"):
+            if add_email:
+                try:
+                    # Find user by email
+                    results = real_db.run_query(
+                        "SELECT user_id FROM `carlos-negron-uprm.database.users` WHERE email = @email LIMIT 1",
+                        [bq.ScalarQueryParameter("email", "STRING", add_email)]
+                    )
+                    if results:
+                        real_db.send_friend_request(user_id, results[0]["user_id"])
+                        st.toast(f"Friend request sent to {add_email}! 📩", icon="✅")
+                    else:
+                        st.error("No user found with that email.")
+                except ValueError as e:
+                    st.warning(str(e))
+                except Exception as e:
+                    st.error(f"Could not send request: {e}")
+            else:
+                st.warning("Please enter an email address.")
+
         st.markdown("---")
+
+        # ── Pending Requests section ──
+        if pending:
+            st.markdown("<div class='section-label'>📬 Pending Requests</div>", unsafe_allow_html=True)
+            for req in pending:
+                email = req.get("email", "")
+                name = email.split("@")[0].replace(".", " ").title() if email else req["requester_id"][:8]
+                col1, col2, col3 = st.columns([3, 2, 1])
+                with col1:
+                    st.markdown(f"**{name}**")
+                    st.caption(email)
+                with col2:
+                    if st.button("Accept", key=f"accept_{req['requester_id']}", use_container_width=True):
+                        st.session_state["confirm_accept"] = req["requester_id"]
+                        st.rerun()
+                with col3:
+                    if st.button("Decline", key=f"decline_{req['requester_id']}", use_container_width=True):
+                        try:
+                            real_db.reject_friend_request(user_id, req["requester_id"])
+                            st.toast(f"Declined {name}'s request", icon="❌")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Could not decline: {e}")
+            st.markdown("---")
+
+        # ── Friends list ──
+        search = st.text_input("Search friends…", placeholder="Search…", key="friend_search")
         st.markdown("<div class='section-label'>Your Friends</div>", unsafe_allow_html=True)
 
         filtered_friends = friends
@@ -665,7 +723,7 @@ elif page == "messages":
             ]
 
         if not filtered_friends:
-            st.info("No friends yet. Find a game and connect with other players!")
+            st.info("No friends yet. Send a friend request above!")
 
         for friend in filtered_friends:
             col1, col2, col3 = st.columns([3, 2, 1])
@@ -692,7 +750,6 @@ elif page == "messages":
         with chat_col:
             active_friend_id = st.session_state["active_chat"]
 
-            # Find friend name for display
             active_friend_name = next(
                 (f["name"] for f in friends if f["user_id"] == active_friend_id),
                 active_friend_id
@@ -722,7 +779,6 @@ elif page == "messages":
                     with st.chat_message(role):
                         st.markdown(msg["content"])
 
-            # Send new message
             if prompt := st.chat_input("Type your message..."):
                 try:
                     real_db.send_message(user_id, active_friend_id, prompt)
@@ -732,9 +788,9 @@ elif page == "messages":
 
 elif page == "activity":
     st.markdown("<h1 class='page-title'>Activity</h1>", unsafe_allow_html=True)
-    
+
     st.markdown("<div class='section-label'>Statistics</div>", unsafe_allow_html=True)
-    
+
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Total Sessions", "48", delta=None)
@@ -742,10 +798,10 @@ elif page == "activity":
         st.metric("Total Hours", "96", delta=None)
     with col3:
         st.metric("Friends", "24", delta=None)
-    
+
     st.markdown("---")
     st.markdown("<div class='section-label'>Activity History</div>", unsafe_allow_html=True)
-    
+
     activity_data = {
         "Sport": ["⚽ Soccer", "🏀 Basketball", "🏐 Volleyball", "🎾 Tennis"],
         "Type": ["Joined", "Joined", "Created", "Joined"],
@@ -757,7 +813,6 @@ elif page == "activity":
 elif page == "settings":
     st.markdown("<h1 class='page-title'>Settings & Profile</h1>", unsafe_allow_html=True)
 
-    # --- Profile card (same as before) ---
     st.markdown("""
     <div style="background-color: #1e1e1e; border: 0.5px solid #2a2a2a; border-radius: 12px;
                 padding: 18px; margin-bottom: 24px;">
