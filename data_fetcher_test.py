@@ -762,6 +762,100 @@ class TestGetFriendActivity(unittest.TestCase):
         _, params = mock_rq.call_args[0]
         self.assertEqual(_param_map(params)["user_id"], "u1")
  
- 
+
+# ---------------------------------------------------------------------------
+# MESSAGES TESTS
+# ---------------------------------------------------------------------------
+
+class TestSendMessage(unittest.TestCase):
+
+    @patch("data_fetcher.run_query")
+    def test_inserts_into_messages_table(self, mock_rq):
+        mock_rq.return_value = []
+        df.send_message("u1", "u2", "Hey, want to play?")
+        query = mock_rq.call_args[0][0]
+        self.assertIn("INSERT", query)
+        self.assertIn("messages", query)
+
+    @patch("data_fetcher.run_query")
+    def test_returns_message_id_string(self, mock_rq):
+        mock_rq.return_value = []
+        result = df.send_message("u1", "u2", "Hey!")
+        self.assertIsInstance(result, str)
+        try:
+            uuid.UUID(result)
+            valid = True
+        except ValueError:
+            valid = False
+        self.assertTrue(valid)
+
+    @patch("data_fetcher.run_query")
+    def test_passes_correct_params(self, mock_rq):
+        mock_rq.return_value = []
+        df.send_message("u1", "u2", "Test message")
+        _, params = mock_rq.call_args[0]
+        pm = _param_map(params)
+        self.assertEqual(pm["sender_id"],   "u1")
+        self.assertEqual(pm["receiver_id"], "u2")
+        self.assertEqual(pm["content"],     "Test message")
+        self.assertIn("message_id", pm)
+
+    @patch("data_fetcher.run_query")
+    def test_generates_unique_message_ids(self, mock_rq):
+        mock_rq.return_value = []
+        id1 = df.send_message("u1", "u2", "First")
+        id2 = df.send_message("u1", "u2", "Second")
+        self.assertNotEqual(id1, id2)
+
+
+class TestGetMessages(unittest.TestCase):
+
+    @patch("data_fetcher.run_query")
+    def test_returns_list(self, mock_rq):
+        mock_rq.return_value = [
+            {"message_id": "m1", "sender_id": "u1", "receiver_id": "u2",
+             "content": "Hey!", "timestamp": "2024-08-01 10:00:00", "read": False}
+        ]
+        result = df.get_messages("u1", "u2")
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 1)
+
+    @patch("data_fetcher.run_query")
+    def test_filters_both_directions(self, mock_rq):
+        mock_rq.return_value = []
+        df.get_messages("u1", "u2")
+        query = mock_rq.call_args[0][0]
+        self.assertIn("sender_id", query)
+        self.assertIn("receiver_id", query)
+
+    @patch("data_fetcher.run_query")
+    def test_orders_by_timestamp_asc(self, mock_rq):
+        mock_rq.return_value = []
+        df.get_messages("u1", "u2")
+        query = mock_rq.call_args[0][0]
+        self.assertIn("ASC", query)
+
+    @patch("data_fetcher.run_query")
+    def test_passes_correct_params(self, mock_rq):
+        mock_rq.return_value = []
+        df.get_messages("u1", "u2")
+        _, params = mock_rq.call_args[0]
+        pm = _param_map(params)
+        self.assertEqual(pm["user_id"],  "u1")
+        self.assertEqual(pm["other_id"], "u2")
+
+    @patch("data_fetcher.run_query")
+    def test_default_limit_50(self, mock_rq):
+        mock_rq.return_value = []
+        df.get_messages("u1", "u2")
+        _, params = mock_rq.call_args[0]
+        self.assertEqual(_param_map(params)["limit"], 50)
+
+    @patch("data_fetcher.run_query")
+    def test_returns_empty_when_no_messages(self, mock_rq):
+        mock_rq.return_value = []
+        result = df.get_messages("u1", "u2")
+        self.assertEqual(result, [])
+
 if __name__ == "__main__":
     unittest.main()
