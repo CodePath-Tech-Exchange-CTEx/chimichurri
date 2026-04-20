@@ -22,7 +22,7 @@ from flask import Blueprint, jsonify, request
 from google.cloud import bigquery
 
 from api.db import run_query, tbl
-from recommender import Recommender
+from recommender import Recommender, W_SEMANTIC, W_SPORT, W_SKILL, W_DISTANCE, W_SOCIAL, W_FRESH
 
 recommend_bp = Blueprint("recommend", __name__)
 
@@ -218,14 +218,6 @@ def explain_recommendation(user_id: str, event_id: str):
             "freshness": W_FRESH,
         },
         "note": "Semantic (Vertex AI embedding) score requires a refresh call to compute.",
-    }
-
-    # Re-import weights for the response
-    from recommender import W_SEMANTIC, W_SPORT, W_SKILL, W_DISTANCE, W_SOCIAL, W_FRESH
-    explanation["weights"] = {
-        "semantic":  W_SEMANTIC, "sport":     W_SPORT,
-        "skill":     W_SKILL,    "distance":  W_DISTANCE,
-        "social":    W_SOCIAL,   "freshness": W_FRESH,
     }
 
     return jsonify(explanation), 200
